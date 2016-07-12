@@ -3,15 +3,10 @@
 import sys, os
 sys.path.insert(0, os.path.abspath('../..'))
 
-import unittest, enum, pandas, io, requests, datetime, numpy, mlp
-
-class Trend(enum.Enum):
-    down = 0
-    up = 1
-    stable = 2
+import unittest, pandas, io, requests, datetime, numpy, mlp
 
 class MLP(unittest.TestCase):
-    """Test cases for CVRP problem."""
+    """Test cases for Ibovespa tendency problem."""
     grid_search = False
 
     def test_1(self):
@@ -51,8 +46,6 @@ class MLP(unittest.TestCase):
                 if stock_name != ibovespa:
                     data[date][stock_name] = row["Close"]
                 else:
-                    #if abs(row["Close"]-row["Open"]) <= 1e-2:
-                    #    data[date][stock_name] = Trend.stable
                     if row["Close"] < row["Open"]:
                         data[date][stock_name] = 0
                     else:
@@ -74,16 +67,21 @@ class MLP(unittest.TestCase):
             input = data.loc[start_date:end_date][columns[1:]].as_matrix().flatten()
             Xi = pandas.DataFrame(input).transpose()
             X = X.append(Xi)
+            break
         #print y
         #print X
 
         X = X.div(X.sum(axis=0), axis=1)
-        y = data[columns[0]].as_matrix()
+        y = data[columns[:1]].as_matrix()
         #print X
-        print y
+        #print y
 
         network = mlp.MLP(X.shape[1], 3, 1)
-        print network.fit(X, y)
+        classifier = network.fit(X, y)
+
+        X = pandas.DataFrame(data=[[1,0]], columns=['x1','x2'])
+        y = classifier.predict(X)
+        print y
 
 
 if __name__ == '__main__':

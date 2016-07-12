@@ -1,18 +1,20 @@
 # -*- coding: utf-8 -*-
 
-import numpy, matplotlib.pyplot as plt
+import numpy, matplotlib.pyplot as plt, time
 from sklearn.metrics import mean_squared_error
 
-class MLP(object):
-    """Class that implements a multilayer perceptron (MLP)"""
-    def __init__(self, input_layer_size, hidden_layer_size, output_layer_size):
+class GlobalInternalRNN(object):
+    """Class that implements a External Recurent Neural Network"""
+    def __init__(self, input_layer_size, hidden_layer_size, output_layer_size, delays):
         self.input_layer_size = input_layer_size
         self.hidden_layer_size = hidden_layer_size
         self.output_layer_size = output_layer_size
+        self.delays = delays
 
         # Initialize weights
         self.W1 = numpy.random.rand(self.input_layer_size, self.hidden_layer_size)
         self.W2 = numpy.random.rand(self.hidden_layer_size, self.output_layer_size)
+        self.C = numpy.zeros((self.hidden_layer_size, self.hidden_layer_size*self.delays))
 
     def fit(self, X, y):
         """Trains the network and returns the trained network"""
@@ -40,6 +42,13 @@ class MLP(object):
                 total_error = numpy.append(total_error, error)
                 dJdW1 = numpy.append(dJdW1, gradients[0])
                 dJdW2 = numpy.append(dJdW2, gradients[1])
+
+                # Computes C matrix
+                self.C = numpy.roll(self.C, 1)
+                self.C[:,::self.delays] = numpy.array([self.Z[0],]*4)
+                print self.C
+                time.sleep(2)
+
 
             # Calculates new weights
             W1 = self.W1 - learning_rate*dJdW1.mean()

@@ -3,8 +3,8 @@
 import numpy, matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error
 
-class MLP(object):
-    """Class that implements a multilayer perceptron (MLP)"""
+class ExternalRNN(object):
+    """Class that implements a External Recurent Neural Network"""
     def __init__(self, input_layer_size, hidden_layer_size, output_layer_size):
         self.input_layer_size = input_layer_size
         self.hidden_layer_size = hidden_layer_size
@@ -26,29 +26,17 @@ class MLP(object):
         params = numpy.concatenate((self.W1.ravel(), self.W2.ravel()))
         error = 1
 
-        # Repeats until error is small enough or max epochs is reached
+        # Max epochs: 2000
         while error > epsilon and remaining_epochs > 0:
-            total_error = numpy.array([])
-            dJdW1 = numpy.array([])
-            dJdW2 = numpy.array([])
-
-            # For each input instance
-            for instance in xrange(X.shape[0]):
-                self.x = X[instance:instance+1]
-                self.y = y[instance:instance+1]
-                error, gradients = self.run_epoch(params, self.x, self.y)
-                total_error = numpy.append(total_error, error)
-                dJdW1 = numpy.append(dJdW1, gradients[0])
-                dJdW2 = numpy.append(dJdW2, gradients[1])
+            error, gradients = self.run_epoch(params, X, y)
+            
+            # Saves error for plot
+            self.J.append(error)
 
             # Calculates new weights
-            W1 = self.W1 - learning_rate*dJdW1.mean()
-            W2 = self.W2 - learning_rate*dJdW2.mean()
-
-            # Saves error for plot
-            error = total_error.mean()
-            self.J.append(error)
-            
+            dJdW1, dJdW2 = gradients
+            W1 = self.W1 - learning_rate*dJdW1
+            W2 = self.W2 - learning_rate*dJdW2
             params = numpy.concatenate((W1.ravel(), W2.ravel()))
 
             print 'Epoch: ' + str(remaining_epochs)
@@ -64,7 +52,7 @@ class MLP(object):
         plt.ylabel('Cost')
         plt.xlabel('Iterations')
         plt.show()
-
+        
         return self
 
     def predict(self, X):
