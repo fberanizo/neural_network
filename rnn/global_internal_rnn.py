@@ -15,7 +15,7 @@ class GlobalInternalRNN(object):
         self.W1 = numpy.random.rand(1 +self.input_layer_size, self.hidden_layer_size)
         self.W2 = numpy.random.rand(1 +self.hidden_layer_size, self.output_layer_size)
         self.W3 = numpy.random.rand(self.hidden_layer_size, self.hidden_layer_size*self.delays)
-        self.Z = numpy.zeros((1, self.hidden_layer_size*self.delays))
+        self.Zdelayed = numpy.zeros((1, self.hidden_layer_size*self.delays))
 
     def fit(self, X, y):
         """Trains the network and returns the trained network"""
@@ -49,6 +49,10 @@ class GlobalInternalRNN(object):
                 self.W1 = self.W1 - learning_rate*dJdW1
                 self.W2 = self.W2 - learning_rate*dJdW2
                 self.W3 = self.W3 - learning_rate*dJdW3
+
+                # Shift Zdelayed values through time
+                self.Zdelayed = numpy.roll(self.Zdelayed, 1, 1)
+                self.Zdelayed[:,::self.delays] = self.Z[:,:-1]
 
             # Saves error for plot
             error = total_error.mean()
@@ -90,17 +94,14 @@ class GlobalInternalRNN(object):
 
     def forward(self, X):
         """Passes input values through network and return output values"""
-        self.Zin = numpy.dot(X, self.W1) + numpy.dot(self.W3, self.Z.T).T
-
-        # Shift Z values through time
-        self.Z = numpy.roll(self.Z, 1, 1)
-        self.Z[:,::self.delays] = self.sigmoid(self.Zin)
+        self.Zin = numpy.dot(X, self.W1) + numpy.dot(self.W3, self.Zdelayed.T).T
+        Z = self.sigmoid(self.Zin)
 
         # Append bias value
-        Zbias = numpy.ones((self.Z[:,::self.delays].shape[0], self.Z[:,::self.delays].shape[1]+1))
-        Zbias[:,:-1] = self.Z[:,::self.delays]
+        self.Z = numpy.ones((Z.shape[0], Z.shape[1]+1))
+        self.Z[:,:-1] = Z
 
-        self.Yin = numpy.dot(Zbias, self.W2)
+        self.Yin = numpy.dot(self.Z, self.W2)
         Y = self.linear(self.Yin)
         return Y
 
@@ -111,14 +112,13 @@ class GlobalInternalRNN(object):
     def backpropagate(self, X, y):
         """Backpropagates costs through the network"""
         delta3 = numpy.multiply(-(y-self.Y), self.linear_derivative(self.Yin))
-        Zbias = numpy.ones((self.Z[:,::self.delays].shape[0], self.Z[:,::self.delays].shape[1]+1))
-        Zbias[:,:-1] = self.Z[:,::self.delays]
-        dJdW2 = numpy.dot(Zbias.T, delta3)
+        dJdW2 = numpy.dot(self.Z.T, delta3)
 
         delta2 = numpy.dot(delta3, self.W2[:-1,:].T)*self.sigmoid_derivative(self.Zin)
         dJdW1 = numpy.dot(X.T, delta2)
 
-        dJdW3 = numpy.zeros((self.hidden_layer_size, self.hidden_layer_size*self.delays))
+        dJdW3 = numpy.dot(numpy.repeat(self.Zdelayed, self.hidden_layer_size, 0), \
+                          numpy.repeat(numpy.repeat(delta2, self.hidden_layer_size*self.delays, 0), self.delays, 1))
 
         return dJdW1, dJdW2, dJdW3
 

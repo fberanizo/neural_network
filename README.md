@@ -1,4 +1,4 @@
-Trabalho - Algorítmos Genéticos
+Trabalho - Redes Neurais Artificiais
 ========================
 **Aluno:** Fábio Beranizo Fontes Lopes  
 **Email:** f.lopes@usp.br  
