@@ -19,7 +19,7 @@ class MLP(unittest.TestCase):
         network = mlp.MLP(X.shape[1], hidden_layer_size, 1)
         classifier = network.fit(X, y)
 
-        X = pandas.DataFrame(data=[[0,0],[0,1],[1,0],[1,1]], columns=['x1','x2'])
+        X = pandas.DataFrame(data=[[0,0],[0,1],[1,0],[1,1]], columns=['x1','x2']).as_matrix()
         y = classifier.predict(X)
         print y
 

@@ -20,7 +20,7 @@ class GlobalInternalRNN(unittest.TestCase):
         classifier = network.fit(X, y)
 
         X = pandas.DataFrame(data=[[0,0],[0,1],[1,0],[1,1]], columns=['x1','x2']).as_matrix()
-        y = classifier.predict(X).as_matrix()
+        y = classifier.predict(X)
         print y
 
 
