@@ -18,9 +18,9 @@ class MLP(unittest.TestCase):
         url = "http://ichart.finance.yahoo.com/table.csv?s=STOCK_NAME&g=d&a=1&b=1&c=2016&&ignore=.csv"
 
         ibovespa = "%5EBVSP"
-        america = ["%5EDJI"]
-        europe = ["%5EFTSE"]
-        asia = ["%5EN225"]
+        america = ["%5EGSPC", "%5EDJI", "%5EMERV", "%5EMXX", "%5EIXIC", "%5EIPSA"]
+        europe = ["%5EFTSE", "%5GDAXI", "^FCHI", "FTSEMIB.MI", "MICEXINDEXCF.ME"]
+        asia = ["%5EN225", "%5EHSI", "%5EBSESN", "%5ESSEC", "%5EJKSE"]
 
         continents = 3
         stocks_per_continent = 1
