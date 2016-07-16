@@ -4,7 +4,7 @@ import numpy, matplotlib.pyplot as plt, time
 from sklearn.metrics import mean_squared_error
 
 class GlobalInternalRNN(object):
-    """Class that implements a External Recurent Neural Network"""
+    """Class that implements a Internal Global Neural Network"""
     def __init__(self, input_layer_size, hidden_layer_size, output_layer_size, delays):
         self.input_layer_size = input_layer_size
         self.hidden_layer_size = hidden_layer_size
