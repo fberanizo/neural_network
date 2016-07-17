@@ -11,8 +11,8 @@ class GlobalInternalRNN(unittest.TestCase):
     grid_search = True
 
     def test_1(self):
-        X = pandas.DataFrame(data=[[0,0],[0,1],[1,0],[1,1],[1,1]], columns=['x1','x2']).as_matrix()
-        y = pandas.DataFrame(data=[[0],[1],[1],[0],[0]], columns=['y']).as_matrix()
+        X = pandas.DataFrame(data=[[0,0],[0,1],[1,0],[1,1]], columns=['x1','x2']).as_matrix()
+        y = pandas.DataFrame(data=[[0],[1],[1],[0]], columns=['y']).as_matrix()
 
         hidden_layer_size = 4
 

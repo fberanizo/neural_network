@@ -12,47 +12,41 @@ class GlobalInternalRNN(object):
         self.delays = delays
 
         # Initialize weights
-        self.W1 = numpy.random.rand(1 +self.input_layer_size, self.hidden_layer_size)
-        self.W2 = numpy.random.rand(1 +self.hidden_layer_size, self.output_layer_size)
-        self.W3 = numpy.random.rand(self.hidden_layer_size, self.hidden_layer_size*self.delays)
-        self.Zdelayed = numpy.zeros((1, self.hidden_layer_size*self.delays))
+        self.W1 = numpy.random.rand(1 + self.input_layer_size, self.hidden_layer_size)
+        self.W2 = numpy.random.rand(1 + self.hidden_layer_size, self.output_layer_size)
+        self.W3 = numpy.random.rand(self.hidden_layer_size, self.hidden_layer_size * self.delays)
+        self.Zdelayed = numpy.zeros((1, self.hidden_layer_size * self.delays))
 
     def fit(self, X, y):
         """Trains the network and returns the trained network"""
-        self.X = X  # input
-        self.y = y  # output
-        self.J = [] # error
-
         epsilon = 0.01
         remaining_epochs = 2000
         learning_rate = 0.2
         error = 1
+        self.J = [] # error
 
         # Repeats until error is small enough or max epochs is reached
         while error > epsilon and remaining_epochs > 0:
             total_error = numpy.array([])
 
             # For each input instance
-            for instance in xrange(X.shape[0]):
-                # Append bias input
-                self.x = numpy.ones((X[instance:instance+1].shape[0], X[instance:instance+1].shape[1]+1))
-                self.x[:,:-1] = X[instance:instance+1]
-
-                self.y = y[instance:instance+1]
-                error, gradients = self.single_step(self.x, self.y)
+            for self.X, self.y in zip(X, y):
+                self.X = numpy.array([self.X])
+                self.y = numpy.array([self.y])
+                error, gradients = self.single_step(self.X, self.y)
                 total_error = numpy.append(total_error, error)
                 dJdW1 = gradients[0]
                 dJdW2 = gradients[1]
                 dJdW3 = gradients[2]
 
                 # Calculates new weights
-                self.W1 = self.W1 - learning_rate*dJdW1
-                self.W2 = self.W2 - learning_rate*dJdW2
-                self.W3 = self.W3 - learning_rate*dJdW3
+                self.W1 = self.W1 - learning_rate * dJdW1
+                self.W2 = self.W2 - learning_rate * dJdW2
+                self.W3 = self.W3 - learning_rate * dJdW3
 
                 # Shift Zdelayed values through time
                 self.Zdelayed = numpy.roll(self.Zdelayed, 1, 1)
-                self.Zdelayed[:,::self.delays] = self.Z[:,:-1]
+                self.Zdelayed[:,::self.delays] = self.Z
 
             # Saves error for plot
             error = total_error.mean()
@@ -60,8 +54,6 @@ class GlobalInternalRNN(object):
 
             print 'Epoch: ' + str(remaining_epochs)
             print 'Error: ' + str(error)
-            #print W1
-            #print W2
 
             remaining_epochs -= 1
 
@@ -77,10 +69,8 @@ class GlobalInternalRNN(object):
     def predict(self, X):
         """Predicts test values"""
         Y = []
-        for instance in xrange(X.shape[0]):
-            x = numpy.ones((X[instance:instance+1].shape[0], X[instance:instance+1].shape[1]+1))
-            x[:,:-1] = X[instance:instance+1]
-            Y.append(self.forward(x))
+        for x in X:
+            Y.append(self.forward(numpy.array([x])))
         return numpy.array(Y)
 
 
@@ -94,14 +84,13 @@ class GlobalInternalRNN(object):
 
     def forward(self, X):
         """Passes input values through network and return output values"""
-        self.Zin = numpy.dot(X, self.W1) + numpy.dot(self.W3, self.Zdelayed.T).T
-        Z = self.sigmoid(self.Zin)
+        self.Zin = numpy.dot(X, self.W1[:-1,:])
+        self.Zin += numpy.dot(numpy.ones((1, 1)), self.W1[-1:,:])
+        self.Zin += numpy.dot(self.Zdelayed, self.W3.T)
+        self.Z = self.sigmoid(self.Zin)
 
-        # Append bias value
-        self.Z = numpy.ones((Z.shape[0], Z.shape[1]+1))
-        self.Z[:,:-1] = Z
-
-        self.Yin = numpy.dot(self.Z, self.W2)
+        self.Yin = numpy.dot(self.Z, self.W2[:-1,])
+        self.Yin += numpy.dot(numpy.ones((1, 1)), self.W2[-1:,:])
         Y = self.linear(self.Yin)
         return Y
 
@@ -113,9 +102,11 @@ class GlobalInternalRNN(object):
         """Backpropagates costs through the network"""
         delta3 = numpy.multiply(-(y-self.Y), self.linear_derivative(self.Yin))
         dJdW2 = numpy.dot(self.Z.T, delta3)
+        dJdW2 = numpy.append(dJdW2, numpy.dot(numpy.ones((1, 1)), delta3), axis=0)
 
         delta2 = numpy.dot(delta3, self.W2[:-1,:].T)*self.sigmoid_derivative(self.Zin)
         dJdW1 = numpy.dot(X.T, delta2)
+        dJdW1 = numpy.append(dJdW1, numpy.dot(numpy.ones((1, 1)), delta2), axis=0)
 
         dJdW3 = numpy.dot(numpy.repeat(self.Zdelayed, self.hidden_layer_size, 0), \
                           numpy.repeat(numpy.repeat(delta2, self.hidden_layer_size*self.delays, 0), self.delays, 1))
