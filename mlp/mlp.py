@@ -16,7 +16,7 @@ class MLP(object):
 
     def fit(self, X, y):
         """Trains the network and returns the trained network"""
-        epsilon = 0.01
+        epsilon = 0.001
         remaining_epochs = 2000
         learning_rate = 0.2
         error = 1
@@ -64,6 +64,11 @@ class MLP(object):
         for x in X:
             Y.append(self.forward(numpy.array([x])))
         return numpy.array(Y)
+
+    def score(self, X, y):
+        """Calculates accuracy"""
+        Y = self.predict(X)
+        return sklearn.metrics.accuracy_score(y, Y)
 
     def single_step(self, X, y):
         """Runs single step training method"""
