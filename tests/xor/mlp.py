@@ -40,7 +40,7 @@ class MLP(unittest.TestCase):
             classifier = mlp.MLP(**best_hiperparams).fit(X_train, y_train)
             accuracies_test[fold] = classifier.score(X_test, y_test)
 
-        print 'Acurácia média:' + numpy.mean(accuracies_test)
+        print 'Acurácia média:' + str(numpy.mean(accuracies_test))
 
     def hipergrid(self):
         """Hiperparameters for MLP"""
