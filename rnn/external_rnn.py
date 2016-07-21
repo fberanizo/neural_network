@@ -5,26 +5,28 @@ from sklearn.metrics import mean_squared_error
 
 class ExternalRNN(object):
     """Class that implements a External Recurent Neural Network"""
-    def __init__(self, input_layer_size, hidden_layer_size, output_layer_size, delays):
-        self.input_layer_size = input_layer_size
+    def __init__(self, hidden_layer_size=3, learning_rate=0.2, max_epochs=1000, delays=2):
         self.hidden_layer_size = hidden_layer_size
-        self.output_layer_size = output_layer_size
+        self.learning_rate = learning_rate
+        self.max_epochs = max_epochs
         self.delays = delays
+        self.auc = 0.5
+
+    def fit(self, X, y):
+        """Trains the network and returns the trained network"""
+        self.input_layer_size = X.shape[1]
+        self.output_layer_size = y.shape[1]
+        remaining_epochs = self.max_epochs
 
         # Initialize weights
         self.W1 = numpy.random.rand(1 + self.input_layer_size, self.hidden_layer_size)
         self.W2 = numpy.random.rand(1 + self.hidden_layer_size, self.output_layer_size)
         self.W3 = numpy.random.rand(self.output_layer_size, self.output_layer_size * self.delays)
-        self.Ydelayed = numpy.zeros((1, self.output_layer_size*self.delays))
+        self.Ydelayed = numpy.zeros((1, self.output_layer_size * self.delays))
 
-    def fit(self, X, y):
-        """Trains the network and returns the trained network"""
-        epsilon = 0.01
-        remaining_epochs = 2000
-        learning_rate = 0.2
+        epsilon = 0.001
         error = 1
         self.J = [] # error
-
 
         # Repeats until error is small enough or max epochs is reached
         while error > epsilon and remaining_epochs > 0:
@@ -53,27 +55,33 @@ class ExternalRNN(object):
             error = total_error.mean()
             self.J.append(error)
 
-            print 'Epoch: ' + str(remaining_epochs)
-            print 'Error: ' + str(error)
+            #print 'Epoch: ' + str(remaining_epochs)
+            #print 'Error: ' + str(error)
 
             remaining_epochs -= 1
 
         # After training, we plot error in order to see how it behaves
-        plt.plot(self.J[1:])
-        plt.grid(1)
-        plt.ylabel('Cost')
-        plt.xlabel('Iterations')
-        plt.show()
+        #plt.plot(self.J[1:])
+        #plt.grid(1)
+        #plt.ylabel('Cost')
+        #plt.xlabel('Iterations')
+        #plt.show()
 
         return self
 
     def predict(self, X):
         """Predicts test values"""
-        Y = []
-        for x in X:
-            Y.append(self.forward(numpy.array([x])))
+        Y = map(lambda x: self.forward(numpy.array([x]))[0], X)
+        Y = map(lambda y: 1 if y > self.auc else 0, Y)
         return numpy.array(Y)
 
+    def score(self, X, y_true):
+        """Calculates accuracy"""
+        y_pred = map(lambda x: self.forward(numpy.array([x]))[0], X)
+        auc = roc_auc_score(y_true, y_pred)
+        y_pred = map(lambda y: 1 if y > self.auc else 0, y_pred)
+        y_pred = numpy.array(y_pred)
+        return accuracy_score(y_true.flatten(), y_pred.flatten())
 
     def single_step(self, X, y):
         """Runs single step training method"""
@@ -89,10 +97,12 @@ class ExternalRNN(object):
         self.Zin += numpy.dot(numpy.ones((1, 1)), self.W1[-1:,:])
         self.Zin += numpy.dot(self.Ydelayed, self.W3.T)
         self.Z = self.sigmoid(self.Zin)
+        self.Z = numpy.nan_to_num(self.Z)
 
         self.Yin = numpy.dot(self.Z, self.W2[:-1,])
         self.Yin += numpy.dot(numpy.ones((1, 1)), self.W2[-1:,:])
         Y = self.linear(self.Yin)
+        Y = numpy.nan_to_num(Y)
         return Y
 
     def cost(self, Y, y):

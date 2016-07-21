@@ -58,8 +58,8 @@ class MLP(unittest.TestCase):
         test.dropna(axis=0, how='any', inplace=True)
 
         data = train[train.columns.tolist()[:-1]].as_matrix()
-        target = train[train.columns.tolist()[-1]].as_matrix()
-        
+        target = train[train.columns.tolist()[-1:]].as_matrix()
+
         X_train, X_test, y_train, y_test = cross_validation.train_test_split(train, target, test_size=0.4, random_state=0)
 
         # Request stock data
@@ -71,8 +71,8 @@ class MLP(unittest.TestCase):
         #     stock = pandas.read_csv(io.StringIO(s.decode('utf-8'))).set_index("Date")
         #     stock.to_csv('input/' + stock_name  + '.csv')
 
-        classifier = mlp.MLP(X_train.shape[1], 3, 1).fit(X_train, y_train)
-        print clf.score(X_test, y_test)
+        classifier = mlp.MLP(hidden_layer_size=3).fit(X_train, y_train)
+        print classifier.score(X_test, y_test)
 
         #X = pandas.DataFrame(data=[[1,0]], columns=['x1','x2'])
         #y = classifier.predict(X)
