@@ -3,15 +3,15 @@
 import sys, os
 sys.path.insert(0, os.path.abspath('../..'))
 
-import unittest, pandas, numpy, datetime, itertools, mlp
+import unittest, pandas, numpy, datetime, itertools, rnn
 from sklearn import cross_validation, preprocessing
 
-class MLP(unittest.TestCase):
+class GlobalInternalRNN(unittest.TestCase):
     """Test cases for Ibovespa tendency problem."""
     grid_search = True
 
     def test_1(self):
-        """Tests the accuracy of a MLP using k-folds validation method."""
+        """Tests the accuracy of a GlobalInternal RNN using k-folds validation method."""
 
         # Read data from CSV files
         X_train, X_test, y_train, y_test = self.read_data()
@@ -33,7 +33,7 @@ class MLP(unittest.TestCase):
                 self.progress(((1.0+fold)+n_folds*idx)/(len(self.hipergrid())*n_folds))
                 X_train2, X_test2 = X_train[train_index], X_train[test_index]
                 y_train2, y_test2 = y_train[train_index], y_train[test_index]
-                classifier = mlp.MLP(**hiperparams).fit(X_train2, y_train2)
+                classifier = rnn.GlobalInternalRNN(**hiperparams).fit(X_train2, y_train2)
                 accuracies[idx] += classifier.score(X_test2, y_test2)
 
         # Finds which hiperparams give maximum accuracy
@@ -106,7 +106,7 @@ class MLP(unittest.TestCase):
         return X_train, X_test, y_train, y_test
 
     def hipergrid(self):
-        """Hiperparameters for MLP"""
+        """Hiperparameters for GlobalInternalRNN"""
         hidden_layer_size = [{'hidden_layer_size':3},{'hidden_layer_size':5},{'hidden_layer_size':7}]
         learning_rate = [{'learning_rate':0.1},{'learning_rate':0.3},{'learning_rate':1}]
         grid = []

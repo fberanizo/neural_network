@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy, matplotlib.pyplot as plt, time
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, accuracy_score, roc_auc_score
 
 class GlobalInternalRNN(object):
     """Class that implements a Internal Global Recrurrent Neural Network"""
@@ -21,7 +21,7 @@ class GlobalInternalRNN(object):
         # Initialize weights
         self.W1 = numpy.random.rand(1 + self.input_layer_size, self.hidden_layer_size)
         self.W2 = numpy.random.rand(1 + self.hidden_layer_size, self.output_layer_size)
-        self.W3 = numpy.random.rand(self.hidden_layer_size, self.hidden_layer_size * self.delays)
+        self.W3 = numpy.random.rand(self.hidden_layer_size * self.delays, self.hidden_layer_size)
         self.Zdelayed = numpy.zeros((1, self.hidden_layer_size * self.delays))
 
         epsilon = 0.001
@@ -43,9 +43,9 @@ class GlobalInternalRNN(object):
                 dJdW3 = gradients[2]
 
                 # Calculates new weights
-                self.W1 = self.W1 - learning_rate * dJdW1
-                self.W2 = self.W2 - learning_rate * dJdW2
-                self.W3 = self.W3 - learning_rate * dJdW3
+                self.W1 = self.W1 - self.learning_rate * dJdW1
+                self.W2 = self.W2 - self.learning_rate * dJdW2
+                self.W3 = self.W3 - self.learning_rate * dJdW3
 
                 # Shift Zdelayed values through time
                 self.Zdelayed = numpy.roll(self.Zdelayed, 1, 1)
@@ -95,7 +95,7 @@ class GlobalInternalRNN(object):
         """Passes input values through network and return output values"""
         self.Zin = numpy.dot(X, self.W1[:-1,:])
         self.Zin += numpy.dot(numpy.ones((1, 1)), self.W1[-1:,:])
-        self.Zin += numpy.dot(self.Zdelayed, self.W3.T)
+        self.Zin += numpy.dot(self.Zdelayed, self.W3)
         self.Z = self.sigmoid(self.Zin)
         self.Z = numpy.nan_to_num(self.Z)
 
@@ -119,8 +119,8 @@ class GlobalInternalRNN(object):
         dJdW1 = numpy.dot(X.T, delta2)
         dJdW1 = numpy.append(dJdW1, numpy.dot(numpy.ones((1, 1)), delta2), axis=0)
 
-        dJdW3 = numpy.dot(numpy.repeat(self.Zdelayed, self.hidden_layer_size, 0), \
-                          numpy.repeat(numpy.repeat(delta2, self.hidden_layer_size*self.delays, 0), self.delays, 1))
+        dJdW3 = numpy.dot(numpy.repeat(self.Zdelayed, self.hidden_layer_size * self.delays, 0), \
+                          numpy.repeat(delta2, self.hidden_layer_size * self.delays, 0))
 
         return dJdW1, dJdW2, dJdW3
 
@@ -131,6 +131,14 @@ class GlobalInternalRNN(object):
     def sigmoid_derivative(self, z):
         """Derivative of sigmoid function"""
         return numpy.exp(-z)/((1+numpy.exp(-z))**2)
+
+    def hyperbolic_tangent(self, z):
+        """Apply hyperbolic tangent activation function"""
+        return (numpy.exp(z) - numpy.exp(-z))/(numpy.exp(z) + numpy.exp(-z))
+
+    def hyperbolic_tangent_derivative(self, z):
+        """Derivative of hyperbolic tangent function"""
+        return (4*(numpy.exp(z)**2))/(((numpy.exp(z)**2) + 1)**2)
 
     def linear(self, z):
         """Apply linear activation function"""

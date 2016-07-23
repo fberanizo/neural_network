@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy, matplotlib.pyplot as plt, time
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, accuracy_score, roc_auc_score
 
 class ExternalRNN(object):
     """Class that implements a External Recurent Neural Network"""
@@ -21,7 +21,7 @@ class ExternalRNN(object):
         # Initialize weights
         self.W1 = numpy.random.rand(1 + self.input_layer_size, self.hidden_layer_size)
         self.W2 = numpy.random.rand(1 + self.hidden_layer_size, self.output_layer_size)
-        self.W3 = numpy.random.rand(self.output_layer_size, self.output_layer_size * self.delays)
+        self.W3 = numpy.random.rand(self.output_layer_size * self.delays, self.hidden_layer_size)
         self.Ydelayed = numpy.zeros((1, self.output_layer_size * self.delays))
 
         epsilon = 0.001
@@ -43,9 +43,9 @@ class ExternalRNN(object):
                 dJdW3 = gradients[2]
 
                 # Calculates new weights
-                self.W1 = self.W1 - learning_rate * dJdW1
-                self.W2 = self.W2 - learning_rate * dJdW2
-                self.W3 = self.W3 - learning_rate * dJdW3
+                self.W1 = self.W1 - self.learning_rate * dJdW1
+                self.W2 = self.W2 - self.learning_rate * dJdW2
+                self.W3 = self.W3 - self.learning_rate * dJdW3
 
                 # Shift Ydelayed values through time
                 self.Ydelayed = numpy.roll(self.Ydelayed, 1, 1)
@@ -95,7 +95,7 @@ class ExternalRNN(object):
         """Passes input values through network and return output values"""
         self.Zin = numpy.dot(X, self.W1[:-1,:])
         self.Zin += numpy.dot(numpy.ones((1, 1)), self.W1[-1:,:])
-        self.Zin += numpy.dot(self.Ydelayed, self.W3.T)
+        self.Zin += numpy.dot(self.Ydelayed, self.W3)
         self.Z = self.sigmoid(self.Zin)
         self.Z = numpy.nan_to_num(self.Z)
 
@@ -119,8 +119,8 @@ class ExternalRNN(object):
         dJdW1 = numpy.dot(X.T, delta2)
         dJdW1 = numpy.append(dJdW1, numpy.dot(numpy.ones((1, 1)), delta2), axis=0)
 
-        dJdW3 = numpy.dot(numpy.repeat(self.Ydelayed, self.hidden_layer_size, 0), \
-                          numpy.repeat(numpy.repeat(delta2, self.hidden_layer_size*self.delays, 0), self.delays, 1))
+        dJdW3 = numpy.dot(numpy.repeat(self.Ydelayed, self.output_layer_size * self.delays, 0), \
+                          numpy.repeat(delta2, self.output_layer_size * self.delays, 0))
 
         return dJdW1, dJdW2, dJdW3
 
